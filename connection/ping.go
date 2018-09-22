@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"log"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -16,9 +15,7 @@ func (c *Connection) ping() {
 		case <-ticker.C:
 			c.mutex.Lock()
 			if c.IsConnected() {
-				log.Println("-> ping")
 				if err := c.ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(c.timeouts.Write)); err != nil {
-					log.Printf("ping write: %s", err)
 					c.mutex.Unlock()
 					c.disconnect(err)
 					break
@@ -32,6 +29,5 @@ func (c *Connection) ping() {
 }
 
 func (c *Connection) pong(string) error {
-	log.Println("<- pong")
 	return c.ws.SetReadDeadline(time.Now().Add(c.timeouts.Read))
 }

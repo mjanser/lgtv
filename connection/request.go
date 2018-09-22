@@ -1,10 +1,8 @@
 package connection
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 )
 
 const (
@@ -65,9 +63,6 @@ func (c *Connection) sendRequest(id int, reqType string, uri string, payload int
 	if err := c.ws.WriteJSON(req); err != nil {
 		return fmt.Errorf("Could not send request with ID %d, type %s and URI %s, error was \"%s\"", id, reqType, uri, err)
 	}
-
-	msg, _ := json.Marshal(req)
-	log.Printf("-> %#v", string(msg))
 
 	return nil
 }

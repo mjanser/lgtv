@@ -2,7 +2,6 @@ package connection
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"time"
 
@@ -89,16 +88,12 @@ func (c *Connection) disconnect(err error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	log.Println("disconnect....")
 	if c.ws == nil {
-		log.Println("disconnect!")
 		return
 	}
 
 	close(c.done)
 	c.ws.Close()
-
-	log.Println("disconnected....")
 
 	c.ws = nil
 	if c.OnDisconnect != nil {

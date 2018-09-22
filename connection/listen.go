@@ -11,7 +11,6 @@ func (c *Connection) listen() {
 	for c.IsConnected() {
 		_, message, err := c.ws.ReadMessage()
 		if err != nil {
-			log.Printf("read: %s", err)
 			if !c.IsConnected() {
 				break
 			}
@@ -27,8 +26,6 @@ func (c *Connection) listen() {
 				log.Printf("Could not unmarshal response \"%s\", error was: %s", string(message), err)
 				continue
 			}
-
-			log.Printf("<- %#v", string(message))
 
 			if ch, ok := c.responseChans[resp.ID]; ok {
 				ch <- resp
