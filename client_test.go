@@ -5,8 +5,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/mjanser/lgtv/connection"
 )
 
 const key = "123"
@@ -119,6 +121,55 @@ func TestRequestWithoutConnection(t *testing.T) {
 	lgtv := NewDefaultClient(url, key)
 	err := lgtv.SetMute(true)
 	if err == nil {
+		t.Fail()
+	}
+}
+
+func TestServerGoneAway(t *testing.T) {
+	server, url := startClientServer(t, func(c *websocket.Conn, req string) {
+		if strings.Contains(req, "register") {
+			c.WriteMessage(websocket.TextMessage, []byte("{\"id\":1,\"type\":\"registered\",\"payload\":{\"client-key\":\"123\"}}"))
+		}
+	})
+	defer server.Close()
+
+	connected := false
+	disconnected := false
+	timeouts := connection.Timeouts{
+		Read:     20 * time.Millisecond,
+		Ping:     10 * time.Millisecond,
+		Write:    20 * time.Millisecond,
+		Response: 20 * time.Millisecond,
+	}
+
+	lgtv := NewClient(url, key, timeouts)
+	lgtv.OnConnect(func(*Client) {
+		connected = true
+	})
+	lgtv.OnDisconnect(func(*Client, error) {
+		disconnected = true
+	})
+
+	err := lgtv.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	defer lgtv.Disconnect()
+
+	time.Sleep(30 * time.Millisecond)
+	lgtv.c.Close()
+	time.Sleep(30 * time.Millisecond)
+
+	if !connected {
+		t.Log("connected should be true, but is false")
+		t.Fail()
+	}
+	if lgtv.IsConnected() {
+		t.Log("IsConnected() returns true, but should return false")
+		t.Fail()
+	}
+	if !disconnected {
+		t.Log("OnDisconnect was not called")
 		t.Fail()
 	}
 }

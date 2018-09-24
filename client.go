@@ -39,11 +39,18 @@ func NewDefaultClient(url string, key string) *Client {
 
 // NewClient creates a LG TV client
 func NewClient(url string, key string, t connection.Timeouts) *Client {
-	return &Client{
+	lgtv := &Client{
 		c:             connection.NewConnection(url, t),
 		key:           key,
 		responseChans: make(map[int]chan []byte),
 	}
+	lgtv.c.OnDisconnect = func(c *connection.Connection, err error) {
+		if lgtv.onDisconnect != nil {
+			lgtv.onDisconnect(lgtv, nil)
+		}
+	}
+
+	return lgtv
 }
 
 // OnConnect registers a callback which is executed when a connection was established
@@ -54,9 +61,6 @@ func (lgtv *Client) OnConnect(f func(*Client)) {
 // OnDisconnect registers a callback which is executed when the connection was closed
 func (lgtv *Client) OnDisconnect(f func(*Client, error)) {
 	lgtv.onDisconnect = f
-	lgtv.c.OnDisconnect = func(c *connection.Connection, err error) {
-		lgtv.Disconnect()
-	}
 }
 
 // Connect tries to connect to the LG TV
